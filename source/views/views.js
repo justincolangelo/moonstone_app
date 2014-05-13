@@ -6,12 +6,22 @@
 
 enyo.kind({
     name: "flickr.MainView",
+    
     classes: "moon enyo-fit",
+    
+    handlers: {
+		onRequestPushPanel: "pushPanel"
+	},
+	
     components: [
         {kind: "moon.Panels", classes: "enyo-fit", pattern: "alwaysviewing", popOnBack: true, components: [
             {kind: "flickr.SearchPanel"}  // Use our new flickr.SearchPanel
         ]}
-    ]
+    ],
+    
+    pushPanel: function(inSender, inEvent) {
+		this.$.panels.pushPanel(inEvent.panel);
+	}
 });
 
 // view in which the user searches for photos and browses the results
@@ -32,12 +42,16 @@ enyo.kind({
         {kind: "moon.Spinner", content: "Loading...", name: "spinner"}
     ],
         
+    events: {
+		onRequestPushPanel: ""
+	},    
+    
     handlers: {
         onInputHeaderChange: "search"
     },
     
     components: [
-        {kind: "moon.DataGridList", fit: true, name: "resultList", minWidth: 250, minHeight: 300, components: [
+        {kind: "moon.DataGridList", fit: true, name: "resultList", minWidth: 250, minHeight: 300,  ontap: "itemSelected", components: [
             {
                 kind: "moon.GridListImageItem", 
                 imageSizing: "cover", 
@@ -50,6 +64,14 @@ enyo.kind({
                 ]
             }
         ]}
+    ],
+    
+    // add a binding from that instance variable to the collection property of DataGridList
+    bindings: [
+        {from: ".photos", to: ".$.resultList.collection"},
+        
+        // bind the spinner's showing property ($ = moon)
+        {from: ".photos.isFetching", to:".$.spinner.showing"}
     ],
     
     // on change, set the input text to the search collection's searchText property
@@ -81,12 +103,21 @@ enyo.kind({
         */
     },
     
-    // add a binding from that instance variable to the collection property of DataGridList
-    bindings: [
-        {from: ".photos", to: ".$.resultList.collection"},
-        
-        // bind the spinner's showing property ($ = moon)
-        {from: ".photos.isFetching", to:".$.spinner.showing"}
-    ],
+    itemSelected: function(inSender, inEvent) {
+		this.doRequestPushPanel({panel: {kind: "flickr.DetailPanel", model: inEvent.model}});
+	}
     
+});
+
+enyo.kind({
+	name: "flickr.DetailPanel",
+	kind: "moon.Panel",
+	layoutKind: "FittableColumnsLayout",
+	components: [
+        {kind: "moon.Image", name: "image", fit:true, sizing:"contain"}
+	],
+	bindings: [
+		{from: ".model.title", to: ".title"},
+		{from: ".model.original", to: ".$.image.src"}
+	]
 });
